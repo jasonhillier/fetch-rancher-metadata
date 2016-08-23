@@ -29,7 +29,7 @@ myService:
 
 ## Execution within service docker container
 ```sh
-fetch-rancher-metadata --key "config" --merge "Application-Config.json"
+$ fetch-rancher-metadata --key "config" --merge "Application-Config.json"
 ```
 
 ## Result (e.g. Application-Config.json)
