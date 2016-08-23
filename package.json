@@ -1,6 +1,6 @@
 {
   "name": "fetch-rancher-metadata",
-  "version": "1.0.8",
+  "version": "1.0.10",
   "description": "Command-Line utility to fetch and merge JSON data from Rancher metadata service",
   "bin": {
     "fetch-rancher-metadata": "bin/fetch-rancher-metadata.js"
@@ -19,7 +19,7 @@
   },
   "preferGlobal": "true",
   "dependencies": {
-    "merge": "^1.2.0",
+    "merge-object": "^1.0.0",
     "request": "^2.74.0",
     "yargs": "^5.0.0"
   }

@@ -2,16 +2,19 @@
 
 var libFS = require('fs');
 var libRequest = require('request');
-var libMerge = require('merge');
+var libMerge = require('merge-object');
 var argv = require('yargs').argv;
 
 var _Key = argv.key ? argv.key : 'config';
 var _MergeFile = argv.merge ? argv.merge : 'Application-Config.json';
 var _WorkDir = process.cwd();
+var _RemoteUrl = 'http://rancher-metadata/latest/self/service/metadata';
+
+console.log('Fetching metadata from:', _RemoteUrl);
 
 libRequest({
     method: 'GET',
-    url: 'http://rancher-metadata/latest/self/service/metadata',
+    url: _RemoteUrl,
     json: true,
     timeout: 2000
     }, function (err, pResponse)
