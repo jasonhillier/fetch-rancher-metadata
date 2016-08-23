@@ -82,8 +82,7 @@ libRequest({
         //we want excpetions to be thrown so process exits with errorlevel and descriptive message,
         // so we might as well use sync procedures.
         var tmpSource = JSON.parse(libFS.readFileSync(`${_WorkDir}/${_MergeFile}`));
-        var tmpTarget = tmpMetadata[_Key];
-        amendTree(tmpSource, tmpTarget);
+        var tmpTarget = amendTree(tmpSource, tmpMetadata[_Key]);
 
         libFS.writeFileSync(`${_WorkDir}/${_MergeFile}`, JSON.stringify(tmpTarget, null, 4));
         console.log('Updated JSON file:', _MergeFile);
