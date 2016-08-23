@@ -1,9 +1,9 @@
 {
   "name": "fetch-rancher-metadata",
-  "version": "1.0.0",
+  "version": "1.0.8",
   "description": "Command-Line utility to fetch and merge JSON data from Rancher metadata service",
   "bin": {
-    "obs": "bin/fetch-rancher-metadata.js"
+    "fetch-rancher-metadata": "bin/fetch-rancher-metadata.js"
   },
   "repository": {
     "type": "git",
