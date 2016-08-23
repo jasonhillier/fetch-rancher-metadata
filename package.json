@@ -1,0 +1,26 @@
+{
+  "name": "fetch-rancher-metadata",
+  "version": "1.0.0",
+  "description": "Command-Line utility to fetch and merge JSON data from Rancher metadata service",
+  "bin": {
+    "obs": "bin/fetch-rancher-metadata.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jasonhillier/fetch-rancher-metadata.git"
+  },
+  "keywords": [
+    "rancher, metadata"
+  ],
+  "author": "Jason Hillier <jason.hillier@paviasystems.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jasonhillier/fetch-rancher-metadata/issues"
+  },
+  "preferGlobal": "true",
+  "dependencies": {
+    "merge": "^1.2.0",
+    "request": "^2.74.0",
+    "yargs": "^5.0.0"
+  }
+}
