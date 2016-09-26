@@ -45,45 +45,63 @@ function amendTree(pOriginal, pModified)
     
     return tmpOutput;
 }
-
 /**
- * Fetch JSON metadata from Rancher, do an append-only merge with local JSON file
+ * Perform merge operation using merge object into target file.
  *
- * @method main
+ * @method performMerge
  */
-console.log('Fetching metadata from:', _RemoteUrl);
+function performMerge(pMergeObject)
+{
+    //we want excpetions to be thrown so process exits with errorlevel and descriptive message,
+    // so we might as well use sync procedures.
+    var tmpSource = JSON.parse(libFS.readFileSync(`${_WorkDir}/${_MergeFile}`));
+    var tmpTarget = amendTree(tmpSource, pMergeObject);
 
-libRequest({
-    method: 'GET',
-    url: _RemoteUrl,
-    json: true,
-    timeout: 2000
-    }, function (err, pResponse)
-    {
-        if (err)
+    libFS.writeFileSync(`${_WorkDir}/${_MergeFile}`, JSON.stringify(tmpTarget, null, 4));
+    console.log('Updated JSON file:', _MergeFile);
+}
+
+if (argv.applyjson)
+{
+    /**
+     * Use JSON data from command-line, do an append-only merge with local JSON file
+     */
+    var tmpMergeObject = JSON.parse(argv.applyjson);
+    return performMerge(tmpMergeObject);
+}
+else
+{
+    /**
+     * Fetch JSON metadata from Rancher, do an append-only merge with local JSON file
+     */
+    console.log('Fetching metadata from:', _RemoteUrl);
+
+    libRequest({
+        method: 'GET',
+        url: _RemoteUrl,
+        json: true,
+        timeout: 2000
+        }, function (err, pResponse)
         {
-            console.error(err);
-            process.exit(1);
-        }
+            if (err)
+            {
+                console.error(err);
+                process.exit(1);
+            }
 
-        if (!pResponse.body)
-        {
-            console.error('No response data received!');
-            process.exit(1);
-        }
+            if (!pResponse.body)
+            {
+                console.error('No response data received!');
+                process.exit(1);
+            }
 
-        var tmpMetadata = pResponse.body;
-        if (!tmpMetadata[_Key])
-        {
-            console.error('Specified JSON key not found:', _Key);
-            process.exit(1);
-        }
+            var tmpMetadata = pResponse.body;
+            if (!tmpMetadata[_Key])
+            {
+                console.error('Specified JSON key not found:', _Key);
+                process.exit(1);
+            }
 
-        //we want excpetions to be thrown so process exits with errorlevel and descriptive message,
-        // so we might as well use sync procedures.
-        var tmpSource = JSON.parse(libFS.readFileSync(`${_WorkDir}/${_MergeFile}`));
-        var tmpTarget = amendTree(tmpSource, tmpMetadata[_Key]);
-
-        libFS.writeFileSync(`${_WorkDir}/${_MergeFile}`, JSON.stringify(tmpTarget, null, 4));
-        console.log('Updated JSON file:', _MergeFile);
-    });
+            return performMerge(tmpMetadata[_Key]);
+        });
+}
