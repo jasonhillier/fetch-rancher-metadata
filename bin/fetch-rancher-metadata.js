@@ -9,12 +9,15 @@ var libFS = require('fs');
 var libRequest = require('request');
 var libPointer = require('json-pointer');
 var libJiff = require('jiff');
+var libAsync = require('async');
 var argv = require('yargs').argv;
 
 var _Key = argv.key ? argv.key : 'config';
 var _MergeFile = argv.merge ? argv.merge : 'Application-Config.json';
+var _MergeFile = argv.file ? argv.file : _MergeFile;
 var _WorkDir = process.cwd();
-var _RemoteUrl = 'http://rancher-metadata/latest/self/service/metadata';
+var _RemoteUrl = 'http://rancher-metadata/latest/self/';
+var RESPONSE_TIMEOUT = 3000;
 
 /**
  * Merge JSON objects, avoiding losing data from within the object tree
@@ -61,6 +64,16 @@ function performMerge(pMergeObject)
     console.log('Updated JSON file:', _MergeFile);
 }
 
+function performReplaceName(pFromName, pNewName)
+{
+    var tmpSource = libFS.readFileSync(`${_WorkDir}/${_MergeFile}`) + '';
+
+    var tmpTarget = tmpSource.replace(new RegExp(pFromName, 'g'), pNewName);
+
+    libFS.writeFileSync(`${_WorkDir}/${_MergeFile}`, tmpTarget);
+    console.log('Updated file:', _MergeFile);
+}
+
 if (argv.applyjson)
 {
     /**
@@ -69,18 +82,80 @@ if (argv.applyjson)
     var tmpMergeObject = JSON.parse(argv.applyjson);
     return performMerge(tmpMergeObject);
 }
+else if (argv.replacename)
+{
+    /**
+     * Fetch JSON metadata from Rancher, do an append-only merge with local JSON file
+     */
+
+    //allow command-line to directly specify name without rancher lookup
+    var tmpFullContainerName = argv.name;
+
+    libAsync.waterfall([
+        function(fStageComplete)
+        {
+            //skip this step if specified
+            if (argv.name)
+                return fStageComplete();
+
+            console.log('Fetching metadata from:', _RemoteUrl + 'container/name');
+            
+            libRequest({
+                method: 'GET',
+                url: _RemoteUrl + 'container/name',
+                json: true,
+                timeout: RESPONSE_TIMEOUT
+                }, function (err, pResponse)
+                {
+                    tmpFullContainerName = pResponse.body;
+                    return fStageComplete(err);
+                });
+        },
+        function(fStageComplete)
+        {
+            //skip this step if specified
+            if (argv.name)
+                return fStageComplete();
+            
+            console.log('Fetching metadata from:', _RemoteUrl + 'container/stack_name');
+
+            libRequest({
+                method: 'GET',
+                url: _RemoteUrl + 'container/stack_name',
+                json: true,
+                timeout: RESPONSE_TIMEOUT
+                }, function (err, pResponse)
+                {
+                    tmpFullContainerName += '.' + pResponse.body;
+                    return fStageComplete(err);
+                });
+        },
+        function(fStageComplete)
+        {
+            performReplaceName(argv.replacename, tmpFullContainerName);
+            return fStageComplete();
+        }
+    ], function(err)
+    {
+        if (err)
+        {
+            console.error(err);
+            return;
+        }
+    });
+}
 else
 {
     /**
      * Fetch JSON metadata from Rancher, do an append-only merge with local JSON file
      */
-    console.log('Fetching metadata from:', _RemoteUrl);
+    console.log('Fetching metadata from:', _RemoteUrl + 'service/metadata');
 
     libRequest({
         method: 'GET',
-        url: _RemoteUrl,
+        url: _RemoteUrl + 'service/metadata',
         json: true,
-        timeout: 2000
+        timeout: RESPONSE_TIMEOUT
         }, function (err, pResponse)
         {
             if (err)
