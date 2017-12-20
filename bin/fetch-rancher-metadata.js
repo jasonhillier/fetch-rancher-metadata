@@ -82,13 +82,15 @@ if (argv.applyjson)
     var tmpMergeObject = JSON.parse(argv.applyjson);
     return performMerge(tmpMergeObject);
 }
-else if (argv.replacename)
+else if (argv.replacename || argv.replacefullname)
 {
     /**
      * Fetch JSON metadata from Rancher, do an append-only merge with local JSON file
      */
 
-    //allow command-line to directly specify name without rancher lookup
+    //Allow command-line to directly specify name without rancher lookup
+    // (which also allows use of env variables)
+    var tmpContainerName = argv.name;
     var tmpFullContainerName = argv.name;
 
     libAsync.waterfall([
@@ -107,7 +109,7 @@ else if (argv.replacename)
                 timeout: RESPONSE_TIMEOUT
                 }, function (err, pResponse)
                 {
-                    tmpFullContainerName = pResponse.body;
+                    tmpContainerName = pResponse.body;
                     return fStageComplete(err);
                 });
         },
@@ -126,13 +128,17 @@ else if (argv.replacename)
                 timeout: RESPONSE_TIMEOUT
                 }, function (err, pResponse)
                 {
-                    tmpFullContainerName += '.' + pResponse.body;
+                    tmpFullContainerName = `${tmpContainerName}.${pResponse.body}`;
                     return fStageComplete(err);
                 });
         },
         function(fStageComplete)
         {
-            performReplaceName(argv.replacename, tmpFullContainerName);
+            if (argv.replacename)
+                performReplaceName(argv.replacename, tmpContainerName);
+            if (argv.replacefullname)
+                performReplaceName(argv.replacefullname, tmpFullContainerName);
+            
             return fStageComplete();
         }
     ], function(err)
