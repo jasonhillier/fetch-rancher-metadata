@@ -82,7 +82,7 @@ if (argv.applyjson)
     var tmpMergeObject = JSON.parse(argv.applyjson);
     return performMerge(tmpMergeObject);
 }
-else if (argv.replacename || argv.replacefullname)
+else if (argv.replacename || argv.replacefullname || argv.replacecontainername)
 {
     /**
      * Fetch JSON metadata from Rancher, do an append-only merge with local JSON file
@@ -97,7 +97,7 @@ else if (argv.replacename || argv.replacefullname)
         function(fStageComplete)
         {
             //skip this step if specified
-            if (argv.name)
+            if (argv.name || argv.replacecontainername)
                 return fStageComplete();
 
             console.log('Fetching metadata from:', _RemoteUrl + 'service/name');
@@ -105,6 +105,24 @@ else if (argv.replacename || argv.replacefullname)
             libRequest({
                 method: 'GET',
                 url: _RemoteUrl + 'service/name',
+                json: true,
+                timeout: RESPONSE_TIMEOUT
+                }, function (err, pResponse)
+                {
+                    tmpServiceName = pResponse.body;
+                    return fStageComplete(err);
+                });
+        },
+        function(fStageComplete)
+        {
+            if (argv.name || !argv.replacecontainername)
+                return fStageComplete();
+            
+            console.log('Fetching metadata from:', _RemoteUrl + 'container/name');
+            
+            libRequest({
+                method: 'GET',
+                url: _RemoteUrl + 'container/name',
                 json: true,
                 timeout: RESPONSE_TIMEOUT
                 }, function (err, pResponse)
@@ -136,6 +154,8 @@ else if (argv.replacename || argv.replacefullname)
         {
             if (argv.replacefullname)
                 performReplaceName(argv.replacefullname, tmpFullServiceName);
+            if (argv.replacecontainername)
+                performReplaceName(argv.replacecontainername, tmpServiceName);
             if (argv.replacename)
                 performReplaceName(argv.replacename, tmpServiceName);
             
