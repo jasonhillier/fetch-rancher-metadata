@@ -134,10 +134,10 @@ else if (argv.replacename || argv.replacefullname)
         },
         function(fStageComplete)
         {
-            if (argv.replacename)
-                performReplaceName(argv.replacename, tmpServiceName);
             if (argv.replacefullname)
                 performReplaceName(argv.replacefullname, tmpFullServiceName);
+            if (argv.replacename)
+                performReplaceName(argv.replacename, tmpServiceName);
             
             return fStageComplete();
         }
