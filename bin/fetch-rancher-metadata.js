@@ -90,8 +90,8 @@ else if (argv.replacename || argv.replacefullname)
 
     //Allow command-line to directly specify name without rancher lookup
     // (which also allows use of env variables)
-    var tmpContainerName = argv.name;
-    var tmpFullContainerName = argv.name;
+    var tmpServiceName = argv.name;
+    var tmpFullServiceName = argv.name;
 
     libAsync.waterfall([
         function(fStageComplete)
@@ -100,16 +100,16 @@ else if (argv.replacename || argv.replacefullname)
             if (argv.name)
                 return fStageComplete();
 
-            console.log('Fetching metadata from:', _RemoteUrl + 'container/name');
+            console.log('Fetching metadata from:', _RemoteUrl + 'service/name');
             
             libRequest({
                 method: 'GET',
-                url: _RemoteUrl + 'container/name',
+                url: _RemoteUrl + 'service/name',
                 json: true,
                 timeout: RESPONSE_TIMEOUT
                 }, function (err, pResponse)
                 {
-                    tmpContainerName = pResponse.body;
+                    tmpServiceName = pResponse.body;
                     return fStageComplete(err);
                 });
         },
@@ -119,25 +119,25 @@ else if (argv.replacename || argv.replacefullname)
             if (argv.name)
                 return fStageComplete();
             
-            console.log('Fetching metadata from:', _RemoteUrl + 'container/stack_name');
+            console.log('Fetching metadata from:', _RemoteUrl + 'service/stack_name');
 
             libRequest({
                 method: 'GET',
-                url: _RemoteUrl + 'container/stack_name',
+                url: _RemoteUrl + 'service/stack_name',
                 json: true,
                 timeout: RESPONSE_TIMEOUT
                 }, function (err, pResponse)
                 {
-                    tmpFullContainerName = `${tmpContainerName}.${pResponse.body}`;
+                    tmpFullServiceName = `${tmpServiceName}.${pResponse.body}`;
                     return fStageComplete(err);
                 });
         },
         function(fStageComplete)
         {
             if (argv.replacename)
-                performReplaceName(argv.replacename, tmpContainerName);
+                performReplaceName(argv.replacename, tmpServiceName);
             if (argv.replacefullname)
-                performReplaceName(argv.replacefullname, tmpFullContainerName);
+                performReplaceName(argv.replacefullname, tmpFullServiceName);
             
             return fStageComplete();
         }
