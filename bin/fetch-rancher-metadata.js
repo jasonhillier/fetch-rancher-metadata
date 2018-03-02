@@ -74,7 +74,49 @@ function performReplaceName(pFromName, pNewName)
     console.log('Updated file:', _MergeFile);
 }
 
-if (argv.applyjson)
+function writeEnvironmentVars(pEnvironmentVars)
+{
+    var tmpContent = '#\n';
+
+    for(var k in pEnvironmentVars)
+    {
+        tmpContent += `export ${k}=${pEnvironmentVars[k]}\n`;
+    }
+
+    libFS.writeFileSync(`${_WorkDir}/rancher-env.sh`, tmpContent);
+    console.log('Updated file:', 'rancher-env.sh');
+}
+
+if (argv.h || argv.help)
+{
+    console.log('fetch-rancher-metadata command line tool');
+    console.log(' --get:\t Request and return specified rancher API value (i.e. "container/name")');
+    console.log(' --e:\t\t Fetch rancher service information and set environment variables');
+    console.log(' --applyjson:\t Merge JSON specified on command-line into file');
+    console.log(' --applyjson:\t Merge JSON specified on command-line into file');
+    console.log(' --merge:\t\t File name to merge JSON into');
+    console.log(' --file:\t\t File name to merge JSON into (alias)');
+    console.log(' --replacename:\t Find and replace value with service_name');
+    console.log(' --replacecontainername: Find and replace value with container_name');
+    console.log(' --replacefullname: Find and replace value with service_name.stack_name');
+}
+else if (argv.get)
+{
+    libRequest({
+        method: 'GET',
+        url: _RemoteUrl + argv.get,
+        json: true,
+        timeout: RESPONSE_TIMEOUT
+        }, function (err, pResponse)
+        {
+            if (err)
+                return process.exit(1); //indicate to calling program that we've failed them
+            
+            console.log(pResponse.body);
+            return process.exit(0);
+        });
+}
+else if (argv.applyjson)
 {
     /**
      * Use JSON data from command-line, do an append-only merge with local JSON file
@@ -82,7 +124,7 @@ if (argv.applyjson)
     var tmpMergeObject = JSON.parse(argv.applyjson);
     return performMerge(tmpMergeObject);
 }
-else if (argv.replacename || argv.replacefullname || argv.replacecontainername)
+else if (argv.replacename || argv.replacefullname || argv.replacecontainername || argv.e)
 {
     /**
      * Fetch JSON metadata from Rancher, do an append-only merge with local JSON file
@@ -92,6 +134,7 @@ else if (argv.replacename || argv.replacefullname || argv.replacecontainername)
     // (which also allows use of env variables)
     var tmpServiceName = argv.name;
     var tmpFullServiceName = argv.name;
+    var tmpEnvironmentVars = {};
 
     libAsync.waterfall([
         function(fStageComplete)
@@ -109,6 +152,7 @@ else if (argv.replacename || argv.replacefullname || argv.replacecontainername)
                 timeout: RESPONSE_TIMEOUT
                 }, function (err, pResponse)
                 {
+                    tmpEnvironmentVars['RANCHER_SERVICE_NAME'] = pResponse.body;
                     tmpServiceName = pResponse.body;
                     return fStageComplete(err);
                 });
@@ -127,6 +171,7 @@ else if (argv.replacename || argv.replacefullname || argv.replacecontainername)
                 timeout: RESPONSE_TIMEOUT
                 }, function (err, pResponse)
                 {
+                    tmpEnvironmentVars['RANCHER_CONTAINER_NAME'] = pResponse.body;
                     tmpServiceName = pResponse.body;
                     return fStageComplete(err);
                 });
@@ -146,7 +191,24 @@ else if (argv.replacename || argv.replacefullname || argv.replacecontainername)
                 timeout: RESPONSE_TIMEOUT
                 }, function (err, pResponse)
                 {
+                    tmpEnvironmentVars['RANCHER_STACK_NAME'] = pResponse.body;
                     tmpFullServiceName = `${tmpServiceName}.${pResponse.body}`;
+                    return fStageComplete(err);
+                });
+        },
+        function(fStageComplete)
+        {
+            console.log('Fetching metadata from:', _RemoteUrl + 'stack/environment_name');
+
+            libRequest({
+                method: 'GET',
+                url: _RemoteUrl + 'stack/environment_name',
+                json: true,
+                timeout: RESPONSE_TIMEOUT
+                }, function (err, pResponse)
+                {
+                    tmpEnvironmentVars['RANCHER_ENV_NAME'] = pResponse.body;
+                    
                     return fStageComplete(err);
                 });
         },
@@ -158,6 +220,8 @@ else if (argv.replacename || argv.replacefullname || argv.replacecontainername)
                 performReplaceName(argv.replacecontainername, tmpServiceName);
             if (argv.replacename)
                 performReplaceName(argv.replacename, tmpServiceName);
+            if (argv.e)
+                writeEnvironmentVars(tmpEnvironmentVars);
             
             return fStageComplete();
         }

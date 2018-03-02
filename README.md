@@ -7,7 +7,13 @@ Command-Line utility to fetch and merge JSON data from Rancher metadata service
 $ npm install -g fetch-rancher-metadata
 ```
 
-## Rancher-Compose.yml
+## Simple get from rancher API
+```
+$ fetch-rancher-metadata --get "container/name"
+mycontainer_1
+```
+
+## Retrieving from stack Rancher-Compose.yml
 ```yml
 myService:
   # Scale of service
