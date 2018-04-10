@@ -207,7 +207,10 @@ else if (argv.replacename || argv.replacefullname || argv.replacecontainername |
                 timeout: RESPONSE_TIMEOUT
                 }, function (err, pResponse)
                 {
-                    tmpEnvironmentVars['RANCHER_ENV_NAME'] = pResponse.body;
+                    if (!pResponse)
+                        tmpEnvironmentVars['RANCHER_ENV_NAME'] = 'DEV';
+                    else
+                        tmpEnvironmentVars['RANCHER_ENV_NAME'] = pResponse.body;
                     
                     return fStageComplete(err);
                 });
