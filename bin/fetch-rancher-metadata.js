@@ -87,9 +87,11 @@ function writeEnvironmentVars(pEnvironmentVars)
     console.log('Updated file:', 'rancher-env.sh');
 }
 
-if (argv.h || argv.help)
+if (argv.h || argv.help || argv.v)
 {
-    console.log('fetch-rancher-metadata command line tool');
+    var package = require('../package.json');
+    console.log('fetch-rancher-metadata command line tool ' + package.version);
+    console.log(' --v:\t App package version');
     console.log(' --get:\t Request and return specified rancher API value (i.e. "container/name")');
     console.log(' --e:\t\t Fetch rancher service information and set environment variables');
     console.log(' --applyjson:\t Merge JSON specified on command-line into file');
@@ -208,11 +210,9 @@ else if (argv.replacename || argv.replacefullname || argv.replacecontainername |
                 }, function (err, pResponse)
                 {
                     if (!pResponse)
-                        tmpEnvironmentVars['RANCHER_ENV_NAME'] = 'DEV';
-                    else
                         tmpEnvironmentVars['RANCHER_ENV_NAME'] = pResponse.body;
                     
-                    return fStageComplete(err);
+                    return fStageComplete(); //ignore error here
                 });
         },
         function(fStageComplete)
