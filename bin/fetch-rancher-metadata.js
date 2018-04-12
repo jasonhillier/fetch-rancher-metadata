@@ -209,7 +209,7 @@ else if (argv.replacename || argv.replacefullname || argv.replacecontainername |
                 timeout: RESPONSE_TIMEOUT
                 }, function (err, pResponse)
                 {
-                    if (!pResponse)
+                    if (pResponse)
                         tmpEnvironmentVars['RANCHER_ENV_NAME'] = pResponse.body;
                     
                     return fStageComplete(); //ignore error here
